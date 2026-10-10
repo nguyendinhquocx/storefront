@@ -4,8 +4,8 @@ import { DefaultChannelSlug } from "@/app/config";
 import { getStorefrontChannelSlugs } from "@/lib/channel-slugs";
 import {
 	CACHE_PROFILES,
-	buildCatchAllTag,
 	buildTag,
+	deliveryFingerprint,
 	extractMenuSlugFromWebhookPayload,
 	extractPageSlugFromWebhookPayload,
 	planFullPurgeTagEntries,
@@ -14,16 +14,13 @@ import {
 	planStorefrontContentRevalidation,
 	resolveManualRevalidateTag,
 	resolveRevalidateProfileForTag,
-	type CacheProfile,
-} from "@/lib/cache-manifest";
-import { revalidateTags } from "@/lib/revalidate-tags";
-import {
-	bustListingAllOnProductEvent,
-	deliveryFingerprint,
 	resolveWebhookEventScope,
+	revalidateTags,
 	sanitizeLogValue,
-} from "@/lib/webhook-events";
+	type CacheProfile,
+} from "@/lib/saleor";
 import { extractBearerToken, verifySecret, verifyWebhookSignature } from "@/lib/api-auth";
+import { listingTagsForDelivery } from "@/lib/listing/invalidate";
 
 /**
  * Webhook endpoint for cache invalidation.
@@ -147,63 +144,6 @@ type TagEntry = { tag: string; profile: CacheProfile["cacheProfile"] };
  */
 function queueEntityTag(profile: CacheProfile, channel: string, slug: string, tagEntries: TagEntry[]) {
 	tagEntries.push({ tag: buildTag(profile, { slug, channel }), profile: profile.cacheProfile });
-}
-
-/** Precise slug tag when the payload names the grid; the channel catch-all otherwise. */
-function queueListingTag(
-	profile: CacheProfile,
-	channel: string,
-	slug: string | undefined,
-	tagEntries: TagEntry[],
-) {
-	tagEntries.push({
-		tag: slug ? buildTag(profile, { slug, channel }) : buildCatchAllTag(profile, channel),
-		profile: profile.cacheProfile,
-	});
-}
-
-/**
- * Sharded listing invalidation — bust only the grids this event can change.
- *
- * A product appears in the all-products grid, its (single) category's grid, and its
- * collections' grids. `listing:all` is skipped when
- * `PAPER_BUST_LISTING_ALL_ON_PRODUCT_EVENT=0` (high-churn catalogs). The category
- * slug rides on standard Saleor payloads; collection membership requires the
- * enriched saleor-paper-app payload (`collections { slug }`) — without it the
- * channel's collection catch-all keeps correctness at the cost of precision.
- * Category/collection entity events bust only their own grid: they cannot change
- * product cards in other grids.
- */
-function queueListingTags(
-	entity: "product" | "category" | "collection",
-	parsed: ParsedWebhookPayload,
-	channel: string,
-	tagEntries: TagEntry[],
-) {
-	switch (entity) {
-		case "product":
-			if (bustListingAllOnProductEvent()) {
-				tagEntries.push({
-					tag: buildTag(CACHE_PROFILES.listingAll, { channel }),
-					profile: CACHE_PROFILES.listingAll.cacheProfile,
-				});
-			}
-			queueListingTag(CACHE_PROFILES.listingCategory, channel, parsed.categorySlug, tagEntries);
-			if (parsed.collectionSlugs) {
-				for (const collectionSlug of parsed.collectionSlugs) {
-					queueListingTag(CACHE_PROFILES.listingCollection, channel, collectionSlug, tagEntries);
-				}
-			} else {
-				queueListingTag(CACHE_PROFILES.listingCollection, channel, undefined, tagEntries);
-			}
-			return;
-		case "category":
-			queueListingTag(CACHE_PROFILES.listingCategory, channel, parsed.slug, tagEntries);
-			return;
-		case "collection":
-			queueListingTag(CACHE_PROFILES.listingCollection, channel, parsed.slug, tagEntries);
-			return;
-	}
 }
 
 // ============================================================================
@@ -368,7 +308,7 @@ export async function POST(request: NextRequest) {
 		// (see queueListingTags). No header (manual POST) is treated as listing-affecting,
 		// matching prior behaviour.
 		if (eventScope?.affectsListing ?? true) {
-			queueListingTags(type, parsed, targetChannel, tagEntries);
+			tagEntries.push(...listingTagsForDelivery(eventScope, type, parsed, targetChannel));
 		}
 
 		switch (type) {

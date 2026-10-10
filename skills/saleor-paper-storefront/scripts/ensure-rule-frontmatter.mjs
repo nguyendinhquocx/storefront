@@ -36,6 +36,8 @@ const DESCRIPTIONS = {
 		"Canonical Next.js 16 App Router stance for Paper: Server Components by default, Server Actions, Cache Components (PPR), BFF auth, two surfaces. Read first when unfamiliar with the codebase or making cross-cutting architectural changes.",
 	"data-caching.md":
 		"Paper caching decisions: Cache Components (PPR), the sync page → Suspense → cached shell → islands model, cache-manifest.ts as source of truth, webhook revalidation, per-locale cache keys. Use when touching catalog data fetching, ISR, stale content, or revalidation.",
+	"data-access.md":
+		"Canonical Saleor access. Use cachedQuery, liveQuery, sessionQuery, or mutate from @/lib/saleor. Use when adding a GraphQL field, a cached entity, a live query, a mutation, or a webhook invalidation.",
 	"data-graphql.md":
 		"GraphQL codegen workflow: edit src/graphql/*.graphql or src/checkout/graphql/*.graphql then run pnpm generate / generate:checkout. Use when adding GraphQL fields, hitting missing generated types, permission errors, or the assignedAttribute API.",
 	"data-auth-routes.md":
@@ -58,6 +60,8 @@ const DESCRIPTIONS = {
 		"High-cardinality catalogs on Paper — PDP_VARIANT_CAP, per-group control ladder, buy-box strategies, ?variant=/?sku= deep links, selection-index, PLP_FACETS alias OR. Use when products have many variants/options, over-cap PDPs, or facet config.",
 	"product-filtering.md":
 		"PLP filtering/sorting — server-side categories/price/sort plus attribute facets via PLP_FACETS and ProductWhereInput alias OR. Use when changing product list filters, facet config, or sort.",
+	"plp-listing.md":
+		"PLP and search listings. ListingQuery in, ListingResult out, one provider per surface (Saleor or a search engine). Use when changing category, collection, all-products, or search pages, facets, or /api/listing.",
 	"paper-surfaces.md":
 		"The two-surface model (storefront vs checkout): route groups, import boundaries, @paper/session-bridge handoff, checkout entry/data flow. Use when working across the storefront/checkout boundary.",
 	"checkout-design-principles.md":
@@ -98,6 +102,8 @@ const DESCRIPTIONS = {
 		"Local dev gotchas for real-device testing via ngrok/LAN (ALLOWED_DEV_ORIGINS) and Chrome-iOS hydration noise. Use when client components seem broken over a tunnel or on a phone.",
 	"dev-investigation.md":
 		"Investigating Saleor API behavior via generated types (src/gql/graphql.ts) and Saleor source. Use when unsure about a field, enum, nullability, or storefront auto-filtering behavior.",
+	"ui-templates.md":
+		"PDP layout templates. Use when molding, restyling, or replacing the product page layout. Edit src/templates and src/config/template-selection.ts. Do not edit the product route, gallery-layout.ts, or Saleor queries for a layout change.",
 	"third-party-embeds.md":
 		"Embedding external marketing widgets (reviews/ratings) without breaking Server Components/PPR: next/script in a client leaf, env keys, placement. Use when adding a vendor widget like Yotpo.",
 };

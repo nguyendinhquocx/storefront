@@ -17,7 +17,7 @@ dependencies:
 
 Project-specific guide for the Saleor Paper storefront — a Next.js 16 e-commerce
 application with TypeScript, Tailwind CSS, and the Saleor GraphQL API. Contains
-34 rules across 8 categories covering architecture, Vercel cost discipline, caching, analytics & attribution, storefront content, PDP architecture, checkout v2,
+37 rules across 8 categories covering architecture, Vercel cost discipline, caching, analytics & attribution, storefront content, PDP architecture, checkout v2,
 design & composition (token system, design quality, section catalog, page composition, design-from-image, verification),
 components, UI patterns, locale routing, i18n, and SEO.
 
@@ -74,6 +74,7 @@ Reference these guidelines when:
 - `data-caching` - Cache Components (PPR), three-layer page model, cache manifest, webhooks
 - `data-auth-routes` - BFF auth, `resolveSessionUser`, account PPR, header chrome refresh
 - `data-redirect-security` - Redirect URL allowlists for auth emails, checkout/account flows, and Host/Origin spoofing prevention
+- `data-access` - **Start here for Saleor calls** — cachedQuery / liveQuery / sessionQuery / mutate
 - `data-graphql` - Two codegen setups (checkout types via server actions, not urql runtime)
 - `data-storefront-content` - Provider-agnostic copy layer, merge semantics, cache tags, wiring
 - `data-storefront-content-saleor` - Saleor Models, slug stack, channel overrides, Configurator
@@ -87,6 +88,7 @@ Reference these guidelines when:
 - `product-high-cardinality` - Caps, buy-box strategies, `?variant=`/`?sku=`, PLP facets alias OR
 - `references/variant-selector-ui.md` - Border states, pill/circle sizing, renderer routing (read before editing renderers)
 - `product-filtering` - Server-side categories/price/sort + `PLP_FACETS` / `ProductWhereInput`
+- `plp-listing` - ListingQuery / ListingResult, one provider per surface, PLP templates
 
 ### 3. Checkout Flow (HIGH)
 
@@ -102,7 +104,8 @@ Reference these guidelines when:
 - `ui-design-system` - **Start here for design** — token vocabulary (color, fluid type, width, rhythm, radius, elevation, motion) + cva variant matrix
 - `design-quality-rubric` - World-class bar: hierarchy, whitespace, full-width-allowed clause, mobile non-negotiables, self-check
 - `ui-sections` - Marketing-block catalog (HeroBanner, FeaturedCollection, ImageWithText, …), selection guide, section authoring pattern
-- `page-composition` - Mold PDP/homepage within the PPR rails (static shell vs dynamic islands)
+- `page-composition` - Mold homepage within the PPR rails; PDP layout goes through `ui-templates`
+- `ui-templates` - PDP templates: ProductView + slots, selected in src/config/template-selection.ts
 - `design-from-image` - Prompt/image → brief → tokens → blocks → compose → verify
 - `design-verification` - Gates: hard-fail token lint, advisory PPR/LCP/client-JS, a11y pass
 

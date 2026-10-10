@@ -15,10 +15,10 @@ Paper rules are **authoritative on architecture**: Server Components by default,
 ## Project skill index (read `SKILL.md`, then the one matching rule)
 
 - **Architecture:** `paper-architecture`, `paper-vercel-cost`
-- **Data:** `data-caching`, `data-graphql`, `data-auth-routes`, `data-analytics`, `data-storefront-content`, `data-storefront-content-saleor`, `data-storefront-content-attributes`
-- **Product:** `product-pdp`, `product-variants`, `product-high-cardinality`, `product-filtering`
+- **Data:** `data-access`, `data-caching`, `data-graphql`, `data-auth-routes`, `data-analytics`, `data-storefront-content`, `data-storefront-content-saleor`, `data-storefront-content-attributes`
+- **Product:** `product-pdp`, `product-variants`, `product-high-cardinality`, `product-filtering`, `plp-listing`
 - **Checkout:** `paper-surfaces`, `checkout-design-principles`, `checkout-management`, `checkout-payment-gateways`, `checkout-components`
-- **Design:** `ui-design-system`, `design-quality-rubric`, `ui-sections`, `page-composition`, `design-from-image`, `design-verification`
+- **Design:** `ui-design-system`, `design-quality-rubric`, `ui-sections`, `page-composition`, `ui-templates`, `design-from-image`, `design-verification`
 - **UI & channels:** `ui-components`, `ui-images`, `ui-channels`, `ui-locale-routing`, `ui-i18n`
 - **SEO:** `seo-metadata`
 - **Dev:** `dev-local`, `dev-investigation`, `third-party-embeds`
@@ -30,10 +30,10 @@ External skills are pinned in `skills-lock.json`; run `pnpm skills:bootstrap` af
 
 - **`pnpm run verify`** — the single "am I done?" gate (docs drift + design-tokens + typecheck + lint + tests, fail-fast). Iterate until green before declaring done. `pnpm run verify:quick` = design-tokens + typecheck for a fast styling loop.
 - `pnpm generate` / `pnpm generate:checkout` — **required** after editing `src/graphql/*.graphql` / `src/checkout/graphql/*.graphql` (`verify`/`typecheck` auto-run this via prehook).
-- `pnpm run build` — only gate that catches PPR dynamic-hole regressions; run on PPR-sensitive layout changes.
+- `pnpm run build` — only gate that catches PPR dynamic-hole regressions; run on PPR-sensitive layout changes. Then `pnpm check:ppr-resume`: a route can build ◐ and still fail to resume at request time (a `new Date()` during render), which empties the nav or `<main>` in the browser.
 - After editing `skills/.../rules/*.md`, run `pnpm run docs:compile` (or `verify` will flag the drift).
 - `pnpm run doctor` — verify the agent setup is actually healthy (project skill linked, external skills installed, docs in sync, compiled doc quarantined). Run it if a session seems off; `pnpm doctor --env` also checks required env.
-- A `stop` hook (`.cursor/hooks.json`) runs `lint:design-tokens` when you finish a turn and nudges you if banned color literals slipped in — fix them before declaring done. Fail-open; disable by removing the entry.
+- A `stop` hook (`.cursor/hooks.json` → `scripts/agent-stop-hook.sh`) runs `lint:design-tokens` when you finish a turn and nudges you if banned color literals slipped in — fix them before declaring done. Fail-open; disable by removing the entry.
 - **Opt-in workflow skills** (PPR/build & cache-tightening work): `next-dev-loop`, `next-cache-components-optimizer` — see `skills/saleor-paper-storefront/README.md` for install + preconditions. Not installed by `skills:bootstrap`.
 
 ## Non-negotiable rules
@@ -43,6 +43,11 @@ External skills are pinned in `skills-lock.json`; run `pnpm skills:bootstrap` af
 3. Style with `brand.css` tokens (`bg-background`, `text-foreground`) — never hardcoded colors.
 4. Handle nullable Saleor fields intentionally — optional-chain for display, guard/throw when null is a real bug.
 5. Import via the `@/` alias. The storefront must not import `@/checkout/*` — cross-surface URLs go through `@paper/session-bridge`.
+6. Saleor only through loaders on `@/lib/saleor` (`cachedQuery`, `liveQuery`, `sessionQuery`, `mutate`). Run `pnpm data:lock` after a data change and review `data-layer.lock.md`.
+7. A new PDP layout is a template in `src/templates/pdp/`, selected in `src/config/template-selection.ts`. Do not edit the product route or `src/lib/storefront` to change layout. Read `rules/ui-templates.md`.
+8. A new listing backend is a provider in `src/lib/listing/providers/`, selected per surface in `src/config/listing-providers.ts`. A new PLP layout is a template in `src/templates/plp/`. Do not edit the listing routes or `src/lib/listing/policy.ts` for either. Read `rules/plp-listing.md`.
+
+Do not add `docs/plans/` or other plan writeups to the repo unless the user explicitly asks to publish one.
 
 ## Key locations
 
@@ -51,7 +56,10 @@ External skills are pinned in `skills-lock.json`; run `pnpm skills:bootstrap` af
 | Storefront GraphQL → generated          | `src/graphql/*.graphql` → `src/gql/` (generated, do not edit)                      |
 | Checkout GraphQL → generated            | `src/checkout/graphql/*.graphql` → `src/checkout/graphql/generated/` (do not edit) |
 | UI components / sections / tokens       | `src/ui/components/` · `src/ui/sections/` · `src/styles/brand.css`                 |
-| Cache manifest (single source of truth) | `src/lib/cache-manifest.ts`                                                        |
+| PDP layout templates                    | `src/templates/pdp/` · `src/config/template-selection.ts`                          |
+| Saleor kernel (all Saleor calls)        | `src/lib/saleor/` · operation registry `src/lib/saleor/operations.ts`              |
+| Cache manifest (single source of truth) | `src/lib/saleor/cache/manifest.ts`                                                 |
+| Listing contract / providers            | `src/lib/listing/` · `src/config/listing-providers.ts` · `src/templates/plp/`      |
 | SEO helpers                             | `src/lib/seo/`                                                                     |
 
 <!-- BEGIN:nextjs-agent-rules -->

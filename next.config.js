@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 import createNextIntlPlugin from "next-intl/plugin";
-import { paperCacheLifeProfiles } from "./src/lib/cache-life-profiles.data.mjs";
+import { paperCacheLifeProfiles } from "./src/lib/saleor/cache/life-profiles.data.mjs";
 import {
 	PUBLIC_ASSET_CACHE_CONTROL,
 	publicAssetCacheHeaderSource,
@@ -68,7 +68,7 @@ const config = {
 	// See: https://nextjs.org/blog/next-16-3-instant-navigations
 	partialPrefetching: true,
 
-	// Named cacheLife tiers for `"use cache"` — see src/lib/cache-life-profiles.ts
+	// Named cacheLife tiers for `"use cache"` — see src/lib/saleor/cache/life-profiles.ts
 	cacheLife: paperCacheLifeProfiles,
 
 	// Optimize barrel file imports for better bundle size and cold start performance

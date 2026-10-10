@@ -21,7 +21,7 @@ Modifying GraphQL queries and regenerating types correctly ensures type safety, 
 | Storefront (products, cart, etc.) | `src/graphql/*.graphql`          | `src/gql/`                        | `pnpm generate`          |
 | Checkout flow                     | `src/checkout/graphql/*.graphql` | `src/checkout/graphql/generated/` | `pnpm generate:checkout` |
 
-> **Note**: Storefront and checkout have **separate codegen setups** (`src/gql/` vs `src/checkout/graphql/generated/`). Both surfaces fetch at runtime via server helpers (`executePublicGraphQL` / `executeAuthenticatedGraphQL`) and checkout server actions — not browser GraphQL. Auth mutations use BFF routes (`/api/auth/*`), not the GraphQL documents directly from the client.
+> **Note**: Storefront and checkout have **separate codegen setups** (`src/gql/` vs `src/checkout/graphql/generated/`). Both surfaces call Saleor at runtime through the kernel (`@/lib/saleor`: `cachedQuery`, `liveQuery`, `sessionQuery`, `mutate`) from loaders and server actions — not browser GraphQL. Every named operation must be registered in `src/lib/saleor/operations.ts` (or `src/config/data-extensions.ts` on a fork); see [`data-access.md`](data-access.md). Auth mutations use BFF routes (`/api/auth/*`), not the GraphQL documents directly from the client.
 
 ---
 
@@ -62,11 +62,12 @@ This regenerates TypeScript types. **Always run the appropriate command after an
 
 ```typescript
 import { ProductDetailsDocument } from "@/gql/graphql";
-import { executePublicGraphQL } from "@/lib/graphql";
+import { CACHE_PROFILES, cachedQuery } from "@/lib/saleor";
 
-const { product } = await executePublicGraphQL(ProductDetailsDocument, {
+const product = await cachedQuery(ProductDetailsDocument, {
+	profile: CACHE_PROFILES.products,
+	tag: slug,
 	variables: { slug, channel },
-	revalidate: 60,
 });
 // TypeScript now recognizes product.newField
 ```

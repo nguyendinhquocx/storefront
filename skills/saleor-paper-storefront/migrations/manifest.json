@@ -338,6 +338,63 @@
 				"buildCatchAllTag",
 				"speedInsightsSampleRate"
 			]
+		},
+		{
+			"id": "2026-10-data-kernel",
+			"title": "Seal Saleor access behind src/lib/saleor with four access modes",
+			"upstreamSha": "",
+			"landedAt": "2026-10-04T23:50:00+02:00",
+			"introducedIn": "2026.10",
+			"requires": ["2026-08-cost-invariants"],
+			"optional": false,
+			"skipPrompt": null,
+			"category": "data-layer",
+			"touchPaths": [
+				"src/lib/saleor/",
+				"src/config/data-extensions.ts",
+				"src/graphql/extensions/",
+				"eslint/paper-data-layer.mjs",
+				"data-layer.lock.md",
+				"paper-core.lock.json"
+			],
+			"detectMarkers": ["cachedQuery", "liveQuery", "sessionQuery", "data-layer.lock.md"]
+		},
+		{
+			"id": "2026-10-storefront-templates",
+			"title": "PDP layout is a template over ProductView, not Saleor types",
+			"upstreamSha": "",
+			"landedAt": "2026-10-05T01:10:00+02:00",
+			"introducedIn": "2026.10",
+			"requires": ["2026-10-data-kernel"],
+			"optional": false,
+			"skipPrompt": null,
+			"category": "presentation",
+			"touchPaths": [
+				"src/lib/storefront/",
+				"src/templates/pdp/",
+				"src/config/template-selection.ts",
+				"src/config/templates.ts",
+				"src/config/storefront-view.ts"
+			],
+			"detectMarkers": ["ProductView", "definePdpTemplate", "ACTIVE_PDP_TEMPLATE"]
+		},
+		{
+			"id": "2026-10-listing-contract",
+			"title": "Listings are a ListingResult from a per-surface provider",
+			"upstreamSha": "",
+			"landedAt": "2026-10-05T12:00:00+02:00",
+			"introducedIn": "2026.10",
+			"requires": ["2026-10-storefront-templates"],
+			"optional": false,
+			"skipPrompt": null,
+			"category": "presentation",
+			"touchPaths": [
+				"src/lib/listing/",
+				"src/config/listing-providers.ts",
+				"src/templates/plp/",
+				"src/app/api/listing/route.ts"
+			],
+			"detectMarkers": ["ListingQuery", "definePlpTemplate", "LISTING_PROVIDERS"]
 		}
 	]
 }

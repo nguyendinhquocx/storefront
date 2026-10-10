@@ -12,7 +12,7 @@ const skillRoot = join(__dirname, "..");
 const rulesDir = join(skillRoot, "rules");
 const outPath = join(skillRoot, "AGENTS.md");
 
-const RULE_COUNT = 34;
+const RULE_COUNT = 37;
 
 const catalog = [
 	{
@@ -32,6 +32,7 @@ const catalog = [
 		rules: [
 			{ num: "1.1", file: "data-caching.md", title: "Caching Strategy" },
 			{ num: "1.2", file: "data-graphql.md", title: "GraphQL Workflow" },
+			{ num: "1.2.1", file: "data-access.md", title: "Saleor Access Modes" },
 			{ num: "1.3", file: "data-auth-routes.md", title: "Auth Routes (BFF)" },
 			{ num: "1.4", file: "data-redirect-security.md", title: "Redirect URL Security" },
 			{ num: "1.5", file: "data-storefront-content.md", title: "Storefront Content Layer" },
@@ -51,6 +52,7 @@ const catalog = [
 			{ num: "2.2", file: "product-variants.md", title: "Variant Selection" },
 			{ num: "2.3", file: "product-high-cardinality.md", title: "High-Cardinality Attributes" },
 			{ num: "2.4", file: "product-filtering.md", title: "Product Filtering" },
+			{ num: "2.5", file: "plp-listing.md", title: "PLP Listing" },
 		],
 	},
 	{
@@ -81,6 +83,7 @@ const catalog = [
 			{ num: "4.4", file: "page-composition.md", title: "Page Composition (PDP & Homepage)" },
 			{ num: "4.5", file: "design-from-image.md", title: "Design From Prompt or Image" },
 			{ num: "4.6", file: "design-verification.md", title: "Design Verification Gates" },
+			{ num: "4.7", file: "ui-templates.md", title: "UI Templates" },
 		],
 	},
 	{
