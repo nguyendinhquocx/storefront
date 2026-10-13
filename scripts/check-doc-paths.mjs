@@ -10,6 +10,11 @@
  *
  * A line that also contains `removed:` may name a removed API (migration notes).
  * On a line that says "Create", a path only needs its parent directory to exist.
+ * `forbidden: \`path\`` names a path that must stay out of the repo. That one path is not
+ * checked (.gitignore keeps it out); every other path on the line still is.
+ * A path under a codegen output root is skipped while that root does not exist (a clean
+ * checkout has none). DOC_PATHS_REQUIRE_GENERATED=1 turns that skip into a failure, for CI
+ * after codegen has run.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -30,6 +35,12 @@ const ROOT_FILES = new Set([
 	"eslint.config.mjs",
 	".graphqlrc.ts",
 ]);
+
+/**
+ * Codegen output (gitignored), mirrored from the `generates` keys in .graphqlrc.ts and
+ * src/checkout/graphql/codegen.ts. The test file keeps the three in sync.
+ */
+export const GENERATED_ROOTS = ["src/gql/", "src/checkout/graphql/generated/"];
 
 /**
  * Removed APIs, and kernel internals agents cannot import (`applyCacheProfile` is
@@ -100,20 +111,47 @@ export function pathsInLine(line) {
 	return out;
 }
 
+/** Paths a line marks `forbidden:`. Only those are exempt from the existence check. */
+export function forbiddenPathsInLine(line) {
+	return [...line.matchAll(/forbidden:\s*(`[^`\n]+`)/g)].flatMap((match) => pathsInLine(match[1]));
+}
+
 export function removedSymbolsInLine(line) {
 	if (line.includes("removed:")) return [];
 	return REMOVED_SYMBOLS.filter((symbol) => line.includes(symbol));
 }
 
-export function checkDocs(files = docFiles(), root = ROOT) {
+export function checkDocs(
+	files = docFiles(),
+	root = ROOT,
+	{ requireGenerated = process.env.DOC_PATHS_REQUIRE_GENERATED === "1" } = {},
+) {
 	const problems = [];
+	const skipped = { ungenerated: 0, forbidden: 0 };
 	let checked = 0;
+	// Whether a codegen root exists cannot change during one run.
+	const missingRoots = GENERATED_ROOTS.filter((dir) => !existsSync(join(root, dir)));
+	if (requireGenerated) {
+		for (const dir of missingRoots) problems.push(`${dir} does not exist; run pnpm generate:all first`);
+	}
+	const ungenerated = (path) =>
+		!requireGenerated && missingRoots.some((dir) => `${path.replace(/\/$/, "")}/`.startsWith(dir));
+
 	for (const file of files) {
 		const rel = relative(root, file);
 		const lines = readFileSync(file, "utf8").split("\n");
 		lines.forEach((line, index) => {
+			const forbidden = new Set(forbiddenPathsInLine(line));
 			const createsPath = /\bcreate\b/i.test(line);
 			for (const path of pathsInLine(line)) {
+				if (forbidden.has(path)) {
+					skipped.forbidden++;
+					continue;
+				}
+				if (ungenerated(path)) {
+					skipped.ungenerated++;
+					continue;
+				}
 				checked++;
 				const target = join(root, path.replace(/\/$/, ""));
 				if (existsSync(target)) continue;
@@ -125,15 +163,20 @@ export function checkDocs(files = docFiles(), root = ROOT) {
 			}
 		});
 	}
-	return { problems, checked, files: files.length };
+	return { problems, checked, skipped, files: files.length };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-	const { problems, checked, files } = checkDocs();
+	const { problems, checked, skipped, files } = checkDocs();
 	if (problems.length > 0) {
 		console.error(problems.join("\n"));
 		console.error(`\n${problems.length} stale doc reference(s). Fix the doc or the path.`);
 		process.exit(1);
 	}
-	console.log(`Doc paths: ${checked} path(s) in ${files} file(s) exist; no removed APIs.`);
+	const notes = [
+		skipped.ungenerated > 0 && `${skipped.ungenerated} under codegen output not generated yet`,
+		skipped.forbidden > 0 && `${skipped.forbidden} marked forbidden`,
+	].filter(Boolean);
+	const skippedNote = notes.length > 0 ? ` (skipped: ${notes.join(", ")})` : "";
+	console.log(`Doc paths: ${checked} path(s) in ${files} file(s) exist${skippedNote}; no removed APIs.`);
 }
